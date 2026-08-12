@@ -66,23 +66,3 @@ handleInput()
 
 event listener
 → menerima klik tombol
-
-
-
-
-
-jika value === "%"
-    cari operator terakhir
-    ambil angka sebelum operator
-    ambil angka setelah operator
-
-    jika operator === "+, -"
-        angka sebelum operator x (angka setelah operator / 100)
-        selesai
-
-    jika operator === "*, /"
-        bagi angka setelah operator dengan 100
-        selesai
-
-    masukkan hasil ke currentinput
-    updatevalue()
