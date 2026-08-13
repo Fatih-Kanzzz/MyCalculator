@@ -17,6 +17,36 @@ function updateDisplay() {
     display.value = currentInput || "0"
 }
 
+function findLastOperator() {
+    return Math.max(
+        currentInput.lastIndexOf("+"),
+        currentInput.lastIndexOf("-"),
+        currentInput.lastIndexOf("*"),
+        currentInput.lastIndexOf("/")
+    )
+}
+
+function getCurrentNumber() {
+    const operatorIndex = findLastOperator()
+    return currentInput.slice(operatorIndex + 1)
+}
+
+function isNegativeSign() {
+    const lastCharacter = currentInput.at(-1)
+
+    if (lastCharacter !== "-") {
+        return false
+    }
+
+    const previousCharacter = currentInput.at(-2)
+
+    if (previousCharacter === undefined) {
+        return true
+    }
+
+    return operators.includes(previousCharacter)
+}
+
 function clearDisplay() {
     currentInput = "" 
     justCalculated = false
@@ -37,12 +67,7 @@ function percentage() {
         return
     }
 
-    const operatorIndex = Math.max(
-        currentInput.lastIndexOf("+"),
-        currentInput.lastIndexOf("-"),
-        currentInput.lastIndexOf("*"),
-        currentInput.lastIndexOf("/")
-    )
+    const operatorIndex = findLastOperator()
 
     if (operatorIndex === -1) {
         currentInput = (Number(currentInput) / 100).toString()
@@ -52,7 +77,7 @@ function percentage() {
 
     const operator = currentInput[operatorIndex]
     const numberBefore = currentInput.slice(0, operatorIndex)
-    const currentNumber = currentInput.slice(operatorIndex + 1)
+    const currentNumber = getCurrentNumber()
 
     const firstNumber = Number(numberBefore)
     const secondNumber = Number(currentNumber)
@@ -76,7 +101,12 @@ function calculate() {
         return
     }
 
-    const lastCharacter = currentInput.at(-1)
+    let lastCharacter = currentInput.at(-1)
+
+    if (lastCharacter === ".") {
+        currentInput = currentInput.slice(0, -1) + "0"
+        lastCharacter = currentInput.at(-1)
+    }
 
     if (operators.includes(lastCharacter)) {
         currentInput = currentInput.slice(0, -1)  
@@ -100,8 +130,6 @@ function calculate() {
     }
 }
 
-
-
 function appendValue(value) {
     if (justCalculated) {
         currentInput = ""
@@ -116,37 +144,21 @@ function appendValue(value) {
             return
         }
 
-        const operatorIndex = Math.max(
-            currentInput.lastIndexOf("+"),
-            currentInput.lastIndexOf("-"),
-            currentInput.lastIndexOf("*"),
-            currentInput.lastIndexOf("/")
-        )
-
-        const currentNumber = currentInput.slice(operatorIndex + 1)
+        const currentNumber = getCurrentNumber()
 
         if (currentNumber.includes(".")) {
             return
         }
-
-        
     }
 
     if (value !== ".") {
-        const operatorIndex = Math.max(
-            currentInput.lastIndexOf("+"),
-            currentInput.lastIndexOf("-"),
-            currentInput.lastIndexOf("*"),
-            currentInput.lastIndexOf("/")
-        )
-
-        const currentNumber = currentInput.slice(operatorIndex + 1)
+        const currentNumber = getCurrentNumber()
 
         if (currentNumber === "0") {
             if (value === "0") {
                 return
             }
-
+            const operatorIndex = findLastOperator()
             currentInput = currentInput.slice(0, operatorIndex + 1)
         }
     }
@@ -176,43 +188,29 @@ function handleOperator(value) {
 
         currentInput = "0"
     }
-
-    const operatorIndex = Math.max(
-            currentInput.lastIndexOf("+"),
-            currentInput.lastIndexOf("-"),
-            currentInput.lastIndexOf("*"),
-            currentInput.lastIndexOf("/")
-        )
         
-    const currentNumber = currentInput.slice(operatorIndex + 1)
+    const currentNumber = getCurrentNumber()
 
     if (currentNumber === ".") {
+        const operatorIndex = findLastOperator()
         currentInput = currentInput.slice(0, operatorIndex + 1) + "0"
+    }
+
+    if (isNegativeSign()) {
+        if (value === "-") {
+            return
+        }
+
+        currentInput = currentInput.slice(0, -2)
+        currentInput += value
+        updateDisplay()
+        return
     }
 
     const lastCharacter = currentInput.at(-1)
 
     if (operators.includes(lastCharacter)) {
-        if (lastCharacter === "-" && value === "-") {
-            return
-        }
-
         if (value === "-") {
-            currentInput += value
-            updateDisplay()
-            return
-        }
-
-        if (lastCharacter === "-") {
-            const previousCharacter = currentInput.at(-2)
-
-            if (operators.includes(previousCharacter)) {
-                if (value === "-") {
-                    return
-                }
-            }
-
-            currentInput = currentInput.slice(0, -2)
             currentInput += value
             updateDisplay()
             return
@@ -244,6 +242,7 @@ buttons.forEach((button) => {
         const value = button.dataset.value
 
         handleInput(value)
+
     })
 })
 
