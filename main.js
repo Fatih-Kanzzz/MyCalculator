@@ -1,10 +1,12 @@
-const display = document.getElementById("display")
+const expression = document.getElementById("expression")
+const resultDisplay = document.getElementById("result")
 const buttons = document.querySelectorAll(".btn")
 
 const operators = ["+", "-", "*", "/"]
 
 let currentInput = ""
 let justCalculated = false
+let lastExpression = ""
 
 const actions = {
     "AC": clearDisplay,
@@ -14,7 +16,32 @@ const actions = {
 }
 
 function updateDisplay() {
-    display.value = currentInput || "0"
+    if (justCalculated) {
+        expression.value = formatExpression(lastExpression)
+        resultDisplay.textContent = currentInput
+
+        expression.classList.add("calculated")
+        resultDisplay.classList.add("final-result")
+
+        expression.classList.remove("active-expression")
+        resultDisplay.classList.remove("preview-result")
+
+        expression.scrollTop = expression.scrollHeight
+
+        return
+    }
+
+    expression.value = formatExpression(currentInput || "0")
+
+    expression.classList.add("active-expression")
+    resultDisplay.classList.add("preview-result")
+
+    expression.classList.remove("calculated")
+    resultDisplay.classList.remove("final-result")
+
+    updatePreview()
+
+    expression.scrollTop = expression.scrollHeight
 }
 
 function findLastOperator() {
@@ -46,6 +73,52 @@ function isNegativeSign() {
 
     return operators.includes(previousCharacter)
 }
+
+function isDigitLimitReached(value) {
+    const currentNumber = getCurrentNumber()
+
+    const digitCount = currentNumber.replace(/\D/g, "").length
+
+    return digitCount >= 20 && value !== "."
+}
+
+function updatePreview() {
+    if (currentInput === "") {
+        resultDisplay.textContent = ""
+        return
+    }
+
+    const lastCharacter = currentInput.at(-1)
+
+    if (
+        operators.includes(lastCharacter) ||
+        lastCharacter === "."
+    ) {
+        resultDisplay.textContent = ""
+        return
+    }
+
+    try {
+        const result = eval(currentInput)
+
+        if (!Number.isFinite(result)) {
+            resultDisplay.textContent = ""
+            return
+        }
+
+        resultDisplay.textContent = `= ${result}`
+    } catch {
+        resultDisplay.textContent = ""
+    }
+}
+
+function formatExpression(value) {
+    return value
+        .replaceAll("*", "×")
+        .replaceAll("/", "÷")
+}
+
+
 
 function clearDisplay() {
     currentInput = "" 
@@ -101,28 +174,31 @@ function calculate() {
         return
     }
 
-    let lastCharacter = currentInput.at(-1)
+    const lastCharacter = currentInput.at(-1)
 
     if (lastCharacter === ".") {
         currentInput = currentInput.slice(0, -1) + "0"
-        lastCharacter = currentInput.at(-1)
     }
 
-    if (operators.includes(lastCharacter)) {
-        currentInput = currentInput.slice(0, -1)  
+    if (operators.includes(currentInput.at(-1))) {
+        currentInput = currentInput.slice(0, -1)
     }
 
     try {
         const result = eval(currentInput)
 
         if (!Number.isFinite(result)) {
+            lastExpression = currentInput
             currentInput = "Can't Divide by Zero"
+            justCalculated = true
             updateDisplay()
             return
         }
 
+        lastExpression = currentInput
         currentInput = result.toString()
         justCalculated = true
+
         updateDisplay()
     } catch {
         currentInput = ""
@@ -134,6 +210,10 @@ function appendValue(value) {
     if (justCalculated) {
         currentInput = ""
         justCalculated = false
+    }
+
+    if (isDigitLimitReached(value)) {
+        return
     }
 
     // validasi titik
@@ -210,6 +290,9 @@ function handleOperator(value) {
     const lastCharacter = currentInput.at(-1)
 
     if (operators.includes(lastCharacter)) {
+        if (lastCharacter === "-" && value === "-") {
+            return
+        }
         if (value === "-") {
             currentInput += value
             updateDisplay()
